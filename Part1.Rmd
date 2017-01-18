@@ -1,0 +1,167 @@
+---
+title: "Statistical Inference Project - Part 1"
+author: "Oye Akinnikawe"
+date: "January 1, 2017"
+output: pdf_document
+---
+
+## Synopsis
+This is a project for the Cousera Statistical Inference Class. The project consists of two parts:
+
+1. Simulation exercise to explore inference
+2. Basic inferential data analysis using the ToothGrowth data in the R datasets package
+
+## Part 1 - Simulation Exercise
+
+### Overview
+
+Investigate the exponential distribution in R and compare it with the Central Limit Theorem. The exponential distribution can be simulated in R with *rexp(n, lambda)* where *lambda* is the rate parameter. The __mean__ of exponential distribution is *1/lambda* and the __standard deviation__ is also *1/lambda*. Set __lambda = 0.2__ for all of the simulations. You will investigate the distribution of averages of __40__ exponentials. *Note that you will need to do a thousand simulations*.
+
+### Instructions
+
+Illustrate via simulation and associated explanatory text the properties of the distribution of the mean of 40 exponentials. You should
+
+1. Show the sample mean and compare it to the theoretical mean of the distribution.
+2. Show how variable the sample is (via variance) and compare it to the theoretical variance of the distribution.
+3. Show that the distribution is approximately normal.
+
+In point 3, focus on the difference between the distribution of a large collection of random exponentials and the distribution of a large collection of averages of 40 exponentials.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load Libraries
+
+```{r library, echo=TRUE}
+library(ggplot2)
+library(data.table)
+```
+
+define problem variables
+
+```{r variable definition, echo=TRUE}
+n <- 40 ## sample size, number of exponentials
+nosim <- 1000 ## number of simulations
+lambda <- 0.2 ## rate parameter
+set.seed(1234) ## seed value for reproducibility
+mu <- 1/lambda ## mean of exponential distribution
+sigma <- 1/lambda ## standard deviation of exponential distribution
+se <- sigma/sqrt(n) ## standard error
+```
+
+create a matrix with 1000 simulations each with 40 samples drawn from the expenetial distribution and find the means.
+
+```{r, echo=TRUE}
+simMeans <- apply(matrix(rexp(nosim * n, lambda), nosim), 1, mean)
+```
+
+## Mean Comparison
+
+Estimate the sample mean and compare it with the theoretical mean of the distribution.
+
+__Sample Mean__
+
+The average sample mean of 1000 simulations of 40 randomly sampled exponential distributions.
+
+```{r, echo=TRUE}
+sampleMean <- mean(simMeans)
+sampleMean
+```
+
+__Theoretical Mean__
+
+The expected mean of the exponential distribution of rate = 1/lambda.
+
+```{r, echo=TRUE}
+theoryMean <- 1/lambda
+theoryMean
+```
+
+the sample mean of the exponential distribution is __4.974239__ and the theoretical mean of the distribution is __5__.
+
+## Variance Comparison
+Estimate the sample variance and compare it with the theoretical variance of the distribution.
+
+__Sample Variance__
+
+The sample variance of 1000 simulations of 40 randomly sampled exponential distributions.
+
+```{r, echo=TRUE}
+sampleVar <- var(simMeans)
+sampleVar
+```
+
+__Theoretical Variance__
+
+the expected variance of the exponential distribution is sigma^2 / n
+
+```{r, echo=TRUE}
+theoryVar <- sigma^2/n
+theoryVar
+```
+
+the sample variance of the exponential distribution is __0.595__ and the theoretical variance of the distribution is __0.625__. The difference is __0.03__.
+
+__Standard deviation__
+
+Estimate the standard deviation of the exponential distribution
+
+```{r, echo=TRUE}
+sampleSD <- sd(simMeans)
+theorySD <- sigma/sqrt(n)
+```
+
+```{r, echo=FALSE}
+cat("Sample Std. deviation is: ", sampleSD)
+cat("Theoretical Std. deviation is: ", theorySD)
+```
+
+## Show that the distribution is Approximately normal
+
+Display results that visually compares the sample values versus the theorectical values.
+
+```{r, fig.align = 'center', echo=TRUE}
+plotdata <- data.frame(simMeans)
+g <- ggplot(plotdata, aes(x = simMeans))
+g <- g + geom_histogram(aes(y = ..density..), colour = "black", fill = "salmon")
+g <- g + labs(title = "Distribution of averages of 40 samples", x = "Mean of 40 Samples", y = "Density")
+g <- g + geom_vline(aes(xintercept = sampleMean, colour = "yellow"))
+g <- g + geom_vline(aes(xintercept = theoryMean, colour = "green"))
+g <- g + stat_function(fun = dnorm, args = list(mean = sampleMean, sd = sampleSD), colour = "blue", size = 1.0)
+g <- g + stat_function(fun = dnorm, args = list(mean = theoryMean, sd = theorySD), colour = "red", size = 1.0)
+g <- g + theme(plot.title = element_text(hjust = 0.5))
+g
+```
+
+The Central limit Theorem (CLT) states averages are approximately normal, with distributions
+
+  - centered at the population mean 
+  - with standard deviation equal to the standard error of the mean 
+
+We can see that the resulting distribution looks like a bell curve and the standard deviation of 0.77 is approximately equal to the standard error of the mean 0.79.
+
+## Confidence Intervals comparison
+
+Estimate the sample confidence intervals (CI) and compare it to the theoretical CI
+
+__sample CI__
+
+```{r, echo=TRUE}
+sampleCI <- round (mean(simMeans) + c(-1,1) * qnorm(.975) * sd(simMeans) / sqrt(n),3)
+sampleCI
+```
+
+__Theoretical CI__
+
+```{r, echo=TRUE}
+theoryCI <- theoryMean + c(-1,1) * qnorm(.975) * sqrt(theoryVar)/sqrt(n)
+theoryCI
+```
+
+The sample CI and the theoretical CI are a good match
+
+## Conclusion
+
+The exponential distribution demonstrates the Central Limit Theorem, a bell shape curve. The 95% confidence interval of the sample and theoretical CI are approximately equal.
